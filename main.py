@@ -4,6 +4,7 @@ import re
 
 from google.appengine.api.app_identity import get_default_version_hostname
 from google.appengine.api.mail import EmailMessage
+from google.appengine.api import memcache
 import jinja2
 import webapp2
 
@@ -17,7 +18,7 @@ jinja_environment = jinja2.Environment(
 class HomeHandler(webapp2.RequestHandler):
 
   def get(self):
-    config = Configuration.all().get()
+    config = memcache.get('config') or Configuration.all().get()
 
     if config:
       template_values = {
@@ -98,24 +99,32 @@ class HomeHandler(webapp2.RequestHandler):
       config.vcode = vcode
       config.rcpt_char = rcpt_char
       config.rcpt_org = rcpt_org
-      config.rcpt_org2 = rcpt_org2
+      if rcpt_org2:
+        config.rcpt_org2 = rcpt_org2
       config.dest_email = dest_email
 
     config.put()
+    memcache.set('config', config)
 
     self.response.out.write("Configuration saved.")
     return
 
   def get_entity_id(self, entity_name):
+    got_name = memcache.get('name-%s' % entity_name)
+    if got_name:
+      return got_name
     elink_api = elink_appengine.AppEngineAPI()
     elink_eve = evelink.eve.EVE(api=elink_api)
-    return elink_eve.character_id_from_name(entity_name)
+    got_name = elink_eve.character_id_from_name(entity_name)
+    if got_name:
+      memcache.set('name-%s' % entity_name, got_name)
+    return got_name
 
 
 class CronHandler(webapp2.RequestHandler):
 
   def get(self):
-    config = Configuration.all().get()
+    config = memcache.get('config') or Configuration.all().get()
     if not config:
       # We haven't set up our configuration yet, so don't try to do anything
       return
@@ -137,10 +146,12 @@ class CronHandler(webapp2.RequestHandler):
     sender_ids = set()
 
     for m_id in message_ids:
-      seen = SeenMail.gql("WHERE mail_id = :1", m_id).get()
+      seen = memcache.get('seen-%s' % m_id) or SeenMail.gql("WHERE mail_id = :1", m_id).get()
       if not seen:
         message_ids_to_relay.add(m_id)
         sender_ids.add(headers[m_id]['sender_id'])
+      else:
+        memcache.set('seen-%s' % m_id, True)
 
     if not message_ids_to_relay:
       self.response.out.write("No pending messages.")
@@ -159,6 +170,7 @@ class CronHandler(webapp2.RequestHandler):
       e.html = self.format_message(bodies[m_id], timestamp, sender)
       e.send()
       SeenMail(mail_id=m_id).put()
+      memcache.set('seen-%s' % m_id, True)
       self.response.out.write("Processed message ID %s.<br/>\n" % m_id)
 
     return
