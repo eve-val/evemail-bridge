@@ -1,0 +1,4 @@
+cron:
+- description: Hourly EVEMail polling
+  url: /cron
+  schedule: every 10 minutes

@@ -1,0 +1,21 @@
+<html>
+  <body>
+    <h1>EVEMail-Email Relay Configuration</h1>
+    <form action="/" method="POST">
+    <dl>
+      <dt>API Key ID</dt>
+        <dd><input name="key_id" value="{{ key_id }} "/></dd>
+      <dt>API Key Verification Code</dt>
+        <dd><input name="vcode" value="{{ vcode }}" /></dd>
+      <dt>API Key Character</dt>
+        <dd><input name="rcpt_char" value="{{ rcpt_char }}" /> (ID or Name)</dd>
+      <dt>Recipient Organization From Which to Relay EVEMail</dt>
+        <dd><input name="rcpt_org" value="{{ rcpt_org }}" /> (ID or Name)</dd>
+      <dt>Recipient Organization #2 From Which to Relay EVEMail (Optional)</dt>
+        <dd><input name="rcpt_org2" value="{{ rcpt_org2 }}" /> (ID or Name)</dd>
+      <dt>Destination Email Address</dt>
+        <dd><input name="dest_email" value="{{ dest_email }}" /></dd>
+    </dl>
+    <p><input type="submit" /></p>
+  </body>
+</html>
