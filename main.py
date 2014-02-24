@@ -167,7 +167,7 @@ class CronHandler(webapp2.RequestHandler):
       sender = senders[headers[m_id]['sender_id']]
       timestamp = headers[m_id]['timestamp']
       e.subject = '[EVEMail] %s' % headers[m_id]['title']
-      e.html = self.format_message(bodies[m_id], timestamp, sender)
+      e.html = self.format_message(bodies[m_id] or '', timestamp, sender)
       e.send()
       SeenMail(mail_id=m_id).put()
       memcache.set('seen-%s' % m_id, True)
